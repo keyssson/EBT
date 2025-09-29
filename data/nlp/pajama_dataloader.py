@@ -28,12 +28,17 @@ class RedPajamaDataset(Dataset):
                 self.dataset = load_from_disk(save_path)
             else: # need to create dataset
                 print(f"no pre-tokenized {hparams.dataset_name} dataset with correct settings, loading and saving")
-                self.dataset = load_dataset("togethercomputer/RedPajama-Data-V2", "sample-100B", split = "train", cache_dir=dataset_dir, trust_remote_code=True, keep_in_memory = False)
+                
+                self.dataset = load_dataset("parquet", data_files="/mnt/lustre/GPU4/home/wangkesong/EBT-main/sample-100B-filtered-shuffled-tokenized-with-token-counts/*.parquet", split = "train", cache_dir=dataset_dir, trust_remote_code=True, keep_in_memory = False)
+
+
+                # self.dataset = load_dataset("togethercomputer/RedPajama-Data-V2", "sample-100B", split = "train", cache_dir=dataset_dir, trust_remote_code=True, keep_in_memory = False)
 
                 num_proc = hparams.num_workers * hparams.num_gpus
                 print("num_proc using for dataset map", num_proc) # found that if have 192 cpus then cannot use 96 (it freezes), so 48 was good. make sure to test this with your own hardware and adjust num workers accordingly
                 # NOTE this code may freeze and takes a very long time to run, make sure to test what values for num_proc and num_workers are best
-                self.dataset = self.dataset.map(self.tokenization, num_proc = num_proc) # batched=True, batch_size=hparams.batch_size_per_device,
+                self.dataset = self.dataset.map(self.tokenization, num_proc = num_proc, batched=True, batch_size=hparams.batch_size_per_device)
+                
                 print("done preprocessing dataset")
                 self.dataset.set_format(type="torch", columns=["input_ids", "attention_mask"])
                 print("done formatting dataset")
@@ -43,8 +48,25 @@ class RedPajamaDataset(Dataset):
 
         self.hparams = hparams
 
-    def tokenization(self, example):
-        return self.tokenizer(example['raw_content'], padding=True, truncation=True, max_length=self.max_length)
+    # def tokenization(self, example):
+    #     return self.tokenizer(example['raw_content'], padding=True, truncation=True, max_length=self.max_length)
+
+    def tokenization(self, examples):
+        input_ids = examples['input_ids'] 
+        attention_mask = examples.get('attention_mask')
+        if attention_mask is None:
+            attention_mask = [[1] * len(ids) for ids in input_ids]
+        padded = self.tokenizer.pad(
+            {"input_ids": input_ids, "attention_mask": attention_mask},
+            padding="max_length",
+            max_length=self.max_length,
+            return_tensors=None  
+        )
+        for k, v in list(padded.items()):
+            if hasattr(v, "tolist"):
+                padded[k] = v.tolist()
+        return padded
+
 
     def __len__(self):
         return len(self.dataset)

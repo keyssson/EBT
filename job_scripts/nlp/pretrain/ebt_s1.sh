@@ -5,12 +5,12 @@
 #SBATCH --gpus-per-node=4
 
 ### LOG INFO ###
-#SBATCH --job-name=ebt-xxs-bs_256_s1_lr_
+#SBATCH --job-name=ebt_s1—_09041913
 #SBATCH --output=logs/slurm/nlp/ebt-xxs-bs_256_s1_lr_%A-%a.log
-export RUN_NAME="ebt-xxs-bs_256_s1_lr_"
+export RUN_NAME="ebt_s1_09041913"
 # NOTE ctrl d ALL THREE of above to modify job-name, output, and RUN_NAME (which should all be the same)
-export MODEL_NAME="${RUN_NAME%%-*}"
-export MODEL_SIZE="${RUN_NAME#*-}"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
+export MODEL_NAME="ebt"
+export MODEL_SIZE="small"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
 mkdir -p logs/slurm/nlp/
 module purge
 
@@ -40,8 +40,8 @@ python train_model.py \
 --gpus "-1" \
 \
 --peak_learning_rate ${lr[${SLURM_ARRAY_TASK_ID}]} \
---batch_size_per_device 32 \
---accumulate_grad_batches 2 \
+--batch_size_per_device 8 \
+--accumulate_grad_batches 8 \
 --gradient_clip_val 1.0 \
 \
 --weight_decay 0.01 \
@@ -51,9 +51,10 @@ python train_model.py \
 --warm_up_steps 10000 \
 \
 --dataset_name "pajama" \
+--dataset_dir "/mnt/lustre/GPU4/home/wangkesong/EBT-main/sample100B" \
 --num_workers 12 \
 --validation_split_pct 0.0005 \
---val_check_interval 15000 \
+--val_check_interval 800 \
 \
 --wandb_project 'nlp_pretrain' \
 \

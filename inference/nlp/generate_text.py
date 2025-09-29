@@ -80,6 +80,16 @@ def generate_text(model, batch, hparams):
     # ppl = model.forward_loss_wrapper(questions, phase="test")['perplexity'].item() # just in case want to debug model PPL
 
     prompt_tokens = [] #NOTE this was to fix a bug where this generation code was not working for bs > 1 due to pad_token_id being same as eos_token_id and min_prompt_len being wrong
+
+    first_q_ids = questions['input_ids'][0]
+    first_q_mask = questions['attention_mask'][0]
+    seq_len = int(first_q_mask.sum().item())
+    prompt_ids = first_q_ids[:seq_len].tolist()
+    print("[DEBUG PROMPT TOKENS]", prompt_ids[:60])
+    print("[DEBUG PROMPT STR]", tokenizer.decode(prompt_ids, skip_special_tokens=True)[:500])
+    print("[DEBUG PROMPT TOKEN COUNT]", len(prompt_ids))
+    print("[DEBUG settings] context_length", hparams.context_length, "max_gen_len", hparams.infer_max_gen_len, "temperature", hparams.infer_temp, "top_p", hparams.infer_topp, "echo", hparams.infer_echo)
+
     for row_ids, row_mask in zip(ids, attn_mask):
         seq_len = row_mask.sum().item()         # number of *real* tokens
         prompt_tokens.append(row_ids[:seq_len].tolist())

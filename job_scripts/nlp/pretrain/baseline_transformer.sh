@@ -5,9 +5,9 @@
 #SBATCH --gpus-per-node=4
 
 ### LOG INFO ###
-#SBATCH --job-name=baseline_transformer-xxs-bs_256_lr_
-#SBATCH --output=logs/slurm/nlp/baseline_transformer-xxs-bs_256_lr_%A-%a.log
-export RUN_NAME="baseline_transformer-xxs-bs_256_lr_"
+#SBATCH --job-name=baseline_transformer-xxs-0922
+#SBATCH --output=logs/slurm/nlp/baseline_transformer-xxs-0922%A-%a.log
+export RUN_NAME="baseline_transformer-xxs-0922"
 # NOTE ctrl d ALL THREE of above to modify job-name, output, and RUN_NAME (which should all be the same)
 export MODEL_NAME="${RUN_NAME%%-*}"
 export MODEL_SIZE="${RUN_NAME#*-}"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
@@ -29,7 +29,7 @@ python train_model.py \
 \
 --context_length 256 \
 \
---gpus "-1" \
+--gpus "4" \
 \
 --peak_learning_rate ${lr[${SLURM_ARRAY_TASK_ID}]} \
 --batch_size_per_device 32 \
@@ -42,7 +42,8 @@ python train_model.py \
 --max_scheduling_steps 1000000 \
 --warm_up_steps 10000 \
 \
---dataset_name "pajama" \
+--dataset_name "fineweb" \
+--dataset_dir "/mnt/lustre/GPU4/home/wangkesong/EBT-main/dataset/fineweb_10BT" \
 --num_workers 12 \
 --validation_split_pct 0.0005 \
 --val_check_interval 15000 \

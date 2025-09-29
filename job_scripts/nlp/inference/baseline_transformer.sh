@@ -5,9 +5,9 @@
 #SBATCH --gpus-per-node=1
 
 ### LOG INFO ###
-#SBATCH --job-name=baseline_transformer-xxs-baseline_996k_bf_1_gen
-#SBATCH --output=logs/slurm/nlp_inference/baseline_transformer-xxs-baseline_996k_bf_1_gen%A-%a.log
-export RUN_NAME="baseline_transformer-xxs-baseline_996k_bf_1_gen"
+#SBATCH --job-name=baseline_transformer-xxs-0922
+#SBATCH --output=logs/slurm/nlp_inference/baseline_transformer-xxs-0922-baseline_996k_bf_1_gen%A-%a.log
+export RUN_NAME="baseline_transformer-xxs-0922"
 # NOTE ctrl d ALL THREE of above to modify job-name, output, and RUN_NAME (which should all be the same)
 export MODEL_NAME="${RUN_NAME%%-*}"
 export MODEL_SIZE="${RUN_NAME#*-}"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
@@ -15,7 +15,7 @@ mkdir -p logs/slurm/nlp_inference/
 module purge
 
 
-BENCHMARKS=("lambada") # "gsm8k" "ai2arc" "bigbench_matrixshapes" "squad" "bigbench_elementary_math_qa" "bigbench_dyck_languages" 
+BENCHMARKS=("gsm8k") # "gsm8k" "ai2arc" "bigbench_matrixshapes" "squad" "bigbench_elementary_math_qa" "bigbench_dyck_languages" 
 DATASET=${BENCHMARKS[$SLURM_ARRAY_TASK_ID]}
 export RUN_NAME="${RUN_NAME}_${DATASET}"
 
@@ -29,7 +29,7 @@ python train_model.py \
 \
 --context_length 256 \
 \
---gpus "-1" \
+--gpus "1" \
 \
 --peak_learning_rate 0.0012 \
 --batch_size_per_device 8 \
@@ -54,7 +54,7 @@ python train_model.py \
 \
 --execution_mode "inference" \
 --only_test \
---only_test_model_ckpt "your/model/ckpt" \
+--only_test_model_ckpt "/mnt/lustre/GPU4/home/wangkesong/EBT-main/logs/checkpoints/baseline_transformer-xxs-09220.0012_2025-09-22_19-20-23_/epoch=epoch=16-step=step=973848-valid_loss=valid_loss=3.6685.ckpt" \
 --infer_max_gen_len 2 \
 --infer_topp 0.1 \
 --infer_temp 0.0 \

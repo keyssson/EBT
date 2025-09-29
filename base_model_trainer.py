@@ -8,6 +8,7 @@ from torchvision.transforms import ToPILImage
 from torch.distributed import all_reduce
 import wandb
 import gc
+import os, json
 
 from data.vid.ucf_dataloader import *
 from data.vid.kinetics_dataloader import *
@@ -270,6 +271,22 @@ class ModelTrainer(L.LightningModule):
                 outputs = generate_text(self.model, batch, self.hparams)
                 for output in outputs:
                     self.infer_logger.log_data(output)
+                # outputs = generate_text(self.model, batch, self.hparams)
+                # rank = getattr(self, "global_rank", None)
+                # if rank is None:
+                #     try:
+                #         rank = int(os.environ.get("RANK", os.environ.get("LOCAL_RANK", 0)))
+                #     except Exception:
+                #         rank = 0
+
+                # out_dir = self.hparams.save_generation_logs_dir
+                # os.makedirs(out_dir, exist_ok=True)
+                # per_rank_file = os.path.join(out_dir, f"results_rank{rank}.jsonl")
+
+                # with open(per_rank_file, "a", encoding="utf-8") as f:
+                #     for output in outputs:
+                #         f.write(json.dumps(output, ensure_ascii=False) + "\n")
+                
             elif self.hparams.modality == "VID":
                 if not self.reset_image_encoder_decoder: # this is done to prevent bug where loading ckpt image encoder doesnt work well, not sure why ckpt image decoder doesnt load well, maybe related to HF
                     self.model.image_encoder = load_image_encoder(self.hparams.backbone_type, self.hparams.vit_backbone_size).to(self.device)

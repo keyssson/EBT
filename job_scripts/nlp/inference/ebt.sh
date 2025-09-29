@@ -5,17 +5,17 @@
 #SBATCH --gpus-per-node=1
 
 ### LOG INFO ###
-#SBATCH --job-name=ebt-xxs-2_steps_langevin_1
+#SBATCH --job-name=ebt_s1_09041913_gsm8k_test1
 #SBATCH --output=logs/slurm/nlp_inference/ebt-xxs-2_steps_langevin_1%A-%a.log
-export RUN_NAME="ebt-xxs-2_steps_langevin_1"
+export RUN_NAME="ebt_s1_09041913_gsm8k_test1"
 # NOTE ctrl d ALL THREE of above to modify job-name, output, and RUN_NAME (which should all be the same)
-export MODEL_NAME="${RUN_NAME%%-*}"
-export MODEL_SIZE="${RUN_NAME#*-}"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
+export MODEL_NAME="ebt"
+export MODEL_SIZE="small"; export MODEL_SIZE="${MODEL_SIZE%%-*}"
 mkdir -p logs/slurm/nlp_inference/
 module purge
 
 
-BENCHMARKS=("lambada") # "gsm8k" "ai2arc" "bigbench_matrixshapes" "squad" "bigbench_elementary_math_qa" "bigbench_dyck_languages" 
+BENCHMARKS=("gsm8k") # "gsm8k" "ai2arc" "bigbench_matrixshapes" "squad" "bigbench_elementary_math_qa" "bigbench_dyck_languages" 
 DATASET=${BENCHMARKS[$SLURM_ARRAY_TASK_ID]}
 export RUN_NAME="${RUN_NAME}_${DATASET}"
 
@@ -33,7 +33,7 @@ python train_model.py \
 \
 --context_length 256 \
 \
---gpus "-1" \
+--gpus "1" \
 \
 --peak_learning_rate 0.0012 \
 --batch_size_per_device 8 \
@@ -47,9 +47,9 @@ python train_model.py \
 --warm_up_steps 10000 \
 \
 --dataset_name ${DATASET} \
---num_workers 12 \
+--num_workers 4 \
 --validation_split_pct 0.0005 \
---val_check_interval 15000 \
+--val_check_interval 50 \
 \
 --wandb_project "nlp_inference_accuracy" \
 \
@@ -59,11 +59,12 @@ python train_model.py \
 --execution_mode "inference" \
 --infer_ebt_advanced \
 --infer_langevin_dynamics_noise 1 \
---infer_ebt_num_steps 2 \
+--infer_ebt_num_steps 0 \
 --only_test \
---only_test_model_ckpt "your/model/ckpt" \
---infer_max_gen_len 2 \
---infer_topp 0.1 \
+--limit_test_batches 1 \
+--only_test_model_ckpt "/mnt/lustre/GPU4/home/wangkesong/EBT-main/logs/checkpoints/ebt_s1_090419130.0012_2025-09-08_23-01-14_/epoch=epoch=24-step=step=20432-valid_loss=valid_loss=3.7839.ckpt" \
+--infer_max_gen_len 64 \
+--infer_topp 1.0 \
 --infer_temp 0.0 \
 --override_slurm_checks \
 \

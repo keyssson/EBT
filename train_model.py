@@ -16,6 +16,7 @@ import ast
 import math
 from tqdm import tqdm
 import json
+import torch
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
 
@@ -207,6 +208,11 @@ def main(args):
         if os.path.exists(args.save_generation_logs_dir): # remove any existing logs
             shutil.rmtree(args.save_generation_logs_dir)
 
+        # rank_env = int(os.environ.get("RANK", os.environ.get("LOCAL_RANK", 0)))
+        # if rank_env == 0:
+        #     if os.path.exists(args.save_generation_logs_dir):
+        #         shutil.rmtree(args.save_generation_logs_dir)
+
         
         checkpoint = torch.load(args.only_test_model_ckpt, weights_only=False)
         pretrained_hparams = checkpoint['hyper_parameters']
@@ -235,6 +241,38 @@ def main(args):
             if args.execution_mode == "inference":
                 em_score, f1_score = nlp_eval_acc(os.path.join(args.save_generation_logs_dir, "results.jsonl"))
                 trainer.logger.experiment.log({"em_score": em_score, "f1_score": f1_score})
+                
+            # trainer.test(model_trainer)
+            # try:
+            #     if trainer.strategy and hasattr(trainer.strategy, "barrier"):
+            #         trainer.strategy.barrier()
+            #     else:
+                    
+            #         if torch.distributed.is_available() and torch.distributed.is_initialized():
+            #             torch.distributed.barrier()
+            # except Exception:
+            #     pass
+            # if args.modality == "NLP" and args.execution_mode == "inference":
+            #     # Determine if this process is global zero
+            #     is_global_zero = getattr(trainer, "is_global_zero", None)
+            #     if is_global_zero is None:
+            #         rank = int(os.environ.get("RANK", os.environ.get("LOCAL_RANK", 0)))
+            #         is_global_zero = (rank == 0)
+            #     if is_global_zero:
+            #         import glob
+            #         merged_path = os.path.join(args.save_generation_logs_dir, "results.jsonl")
+            #         per_files = sorted(glob.glob(os.path.join(args.save_generation_logs_dir, "results_rank*.jsonl")))
+            #         with open(merged_path, "w", encoding="utf-8") as fout:
+            #             for pf in per_files:
+            #                 with open(pf, "r", encoding="utf-8") as fin:
+            #                     for line in fin:
+            #                         fout.write(line)
+            #         em_score, f1_score = nlp_eval_acc(merged_path)
+            #         try:
+            #             if trainer.logger:
+            #                 trainer.logger.experiment.log({"em_score": em_score, "f1_score": f1_score})
+            #         except Exception:
+            #             print("Could not log to trainer.logger.experiment")
         elif args.modality == "VID":
             if args.infer_generate_video:
                 print("calling style gan FVD code on generated video dataset, NOTE THIS CODE MAY NOT WORK AS EXPECTED or get stuck")
